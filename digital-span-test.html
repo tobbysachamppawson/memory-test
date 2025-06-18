@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Digit Span Memory Test</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ffafbd, #ffc3a0);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      padding: 50px;
+      color: #333;
+    }
+    h1 {
+      margin-bottom: 5px;
+    }
+    p {
+      max-width: 500px;
+      margin: 0 auto 30px;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+    #number-display {
+      font-size: 72px;
+      margin: 40px 0;
+      font-weight: 700;
+      letter-spacing: 10px;
+      color: #4a148c;
+      min-height: 100px;
+    }
+    #user-input {
+      font-size: 22px;
+      padding: 12px;
+      width: 300px;
+      border: 2px solid #4a148c;
+      border-radius: 6px;
+      text-align: center;
+    }
+    button {
+      font-size: 20px;
+      padding: 12px 25px;
+      margin: 20px 10px 0;
+      border: none;
+      border-radius: 6px;
+      background-color: #4a148c;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #6a1b9a;
+    }
+    #feedback {
+      margin-top: 30px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #b71c1c;
+      min-height: 80px;
+    }
+    #copy-btn {
+      display: none;
+      background-color: #2e7d32;
+      margin-left: 0;
+    }
+    #copy-btn:hover {
+      background-color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Digit Span Memory Test</h1>
+<p>Focus! When you press Start, digits will be shown one by one and read aloud. Memorise them in order. Then type the full number once done. The number gets longer each round.</p>
+
+<button id="start-btn">Start</button>
+<div id="number-display"></div>
+<input type="text" id="user-input" style="display:none;" autocomplete="off" />
+<button id="submit-btn" style="display:none;">Submit</button>
+<div id="feedback"></div>
+<button id="copy-btn">Copy this result</button>
+
+<script>
+  const display = document.getElementById('number-display');
+  const input = document.getElementById('user-input');
+  const startBtn = document.getElementById('start-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const feedback = document.getElementById('feedback');
+  const copyBtn = document.getElementById('copy-btn');
+
+  let sequence = '';
+  let currentSet = 1;
+  let readingDigits = false;
+
+  function generateDigit() {
+    return Math.floor(Math.random() * 10).toString();
+  }
+
+  // Speak the digit aloud
+  function speakDigit(digit) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(digit);
+      utterance.lang = 'en-GB';
+      speechSynthesis.speak(utterance);
+    }
+  }
+
+  // Show digits one by one with 1 second delay & speak aloud
+  function showDigits(index = 0) {
+    if (index < sequence.length) {
+      readingDigits = true;
+      display.textContent = sequence[index];
+      speakDigit(sequence[index]);
+      setTimeout(() => {
+        display.textContent = '';
+        setTimeout(() => {
+          showDigits(index + 1);
+        }, 300);
+      }, 1000);
+    } else {
+      readingDigits = false;
+      display.textContent = '';
+      input.value = '';
+      input.style.display = 'inline-block';
+      input.focus();
+      startBtn.style.display = 'none';
+      submitBtn.style.display = 'inline-block';
+    }
+  }
+
+  function startTest() {
+    sequence = generateDigit();
+    currentSet = 1;
+    feedback.textContent = '';
+    copyBtn.style.display = 'none';
+    input.style.display = 'none';
+    submitBtn.style.display = 'none';
+    startBtn.style.display = 'none';
+    showDigits();
+  }
+
+  function nextSet() {
+    sequence += generateDigit();
+    currentSet++;
+    feedback.textContent = '';
+    copyBtn.style.display = 'none';
+    input.style.display = 'none';
+    submitBtn.style.display = 'none';
+    startBtn.style.display = 'none';
+    showDigits();
+  }
+
+  function endTest() {
+    display.textContent = '';
+    input.style.display = 'none';
+    submitBtn.style.display = 'none';
+    startBtn.style.display = 'inline-block';
+    startBtn.textContent = 'Start Again';
+
+    feedback.innerHTML = `
+      ❌ Incorrect.<br>
+      You got up to <strong>Set ${currentSet - 1}</strong>.<br>
+      Please go back to your form and copy-paste the set number in the box provided.<br>
+      <br>
+      <em>Click "Copy this result" to copy your final set number.</em>
+    `;
+    copyBtn.style.display = 'inline-block';
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (!readingDigits) {
+      startTest();
+    }
+  });
+
+  submitBtn.addEventListener('click', () => {
+    if (input.value.trim() === sequence) {
+      feedback.textContent = '✅ Correct! Get ready for the next set...';
+      setTimeout(nextSet, 1500);
+    } else {
+      endTest();
+    }
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const textToCopy = `Set ${currentSet - 1}`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy this result';
+      }, 1500);
+    });
+  });
+</script>
+
+</body>
+</html>
